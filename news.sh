@@ -63,7 +63,7 @@ showArticles() {
 			curl -s -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/articles?apiKey=$apikey&source=$2" | jq '. | {title: .articles[].title}' > articles/title.json
 			curl -s -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/articles?apiKey=$apikey&source=$2" | jq '. | {description: .articles[].description}' > articles/description.json
 			;;
-		## c)
+		c)
 			## kulks will do curl for each source and use >> not > choose sources from pref.md for showing by category
 			## get category do curl as above in s) for each source in pref/category.json where "category" in "category.json" will be category user mentioned
 			## show just like above, save the sources from pref in specific category.json 
@@ -159,7 +159,7 @@ while getopts "ahps" OPTION; do
 				echo "Preferences files created."
 				printf '{\n}' | cat > pref.md
 			fi;
-			staus="false"
+			status="false"
 			while [ $status = "false" ];
 			do
 				echo "Categories: business, entertainment, gaming, general, music, politics, science-and-nature, sport, technology."
