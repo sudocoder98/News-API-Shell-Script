@@ -62,19 +62,34 @@ showArticles() {
 		s)
 			curl -s -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/articles?apiKey=$apikey&source=$2" | jq '. | {title: .articles[].title}' > articles/title.json
 			curl -s -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/articles?apiKey=$apikey&source=$2" | jq '. | {description: .articles[].description}' > articles/description.json
-			;;
-		c)
-			## Run loop for length of array in the entered categories .json file
-			cat pref/$2.json #pass this jq and get each element in list and then use curl
-			;;
-
-		*)
 			opTitle=$(cat articles/title.json | jq '.title')
 			opDescription=$(cat articles/description.json | jq '.description')
 			echo "$opTitle" > articles/title.json
 			echo "$opDescription" > articles/description.json
 			paste -d '\n' articles/title.json articles/description.json > articles/final.json
+			echo ""
 			awk -v n=2 '1; NR % n == 0 {print ""}' articles/final.json
+			;;
+		c)
+			## Run loop for length of array in the entered categories .json file
+			for key in $(cat pref/$2.json | jq '.[]'); do
+				source="${key%\"}"
+				source="${source#\"}"
+				linkGot="https://newsapi.org/v1/articles?apiKey=$apikey&source=${source}"
+			    curl -s -X GET -H "Content-Type: application/json" $linkGot | jq '. | {title: .articles[].title}' > articles/title.json
+				curl -s -X GET -H "Content-Type: application/json" $linkGot | jq '. | {description: .articles[].description}' > articles/description.json
+				opTitle=$(cat articles/title.json | jq '.title')
+				opDescription=$(cat articles/description.json | jq '.description')
+				echo "$opTitle" > articles/title.json
+				echo "$opDescription" > articles/description.json
+				paste -d '\n' articles/title.json articles/description.json > articles/final.json
+				echo ""
+				awk -v n=2 '1; NR % n == 0 {print ""}' articles/final.json
+			done
+			;;
+
+		*)
+			echo "News fetched successfully"
 	esac
 }
 
@@ -108,18 +123,6 @@ while getopts "ahps" OPTION; do
 						echo "Selected source is: $source"
 						args="s"
 						showArticles $args $source
-						;;
-					o)
-						read -p "Enter the sort-by order: " order
-						if [ $order != "top" ] && [ $order != "popular" ] && [ $order != "latest" ]
-						then
-							echo "Illegal sort-by order selected"
-							echo "Available sort-by options: top, latest, popular"
-							order="top"
-						fi
-						echo "Sort-by order is: $order"
-						args="o"
-						showArticles $args $order
 						;;
 
 				esac
