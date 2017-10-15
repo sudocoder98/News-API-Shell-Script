@@ -1,51 +1,79 @@
-checkPrefFileExists() {
-	if [ -n "$(find . -name pref.md)" ]
-	then
-		eval "$1='true'"
-	else
-		echo "Preferences file not found"
-		eval "$1='false'"
-	fi
-}
-
-createPrefFile() {
-	echo "Your Preferences file doesn't exist!"
-	echo "You must initiate a Preferences file with your" 
-	echo "News-API Key to continue using this service"
-	echo ""
-	echo "To generate your Key, visit - https://newsapi.org/register"
-	echo ""
-	read -p "Enter API key: " apikey
-	echo $apikey | cat > pref.md 
-	echo "Preferences file created!"
-	#help about options
-}
-
-if [ $# -eq 0 ]
+## Check for missing options
+## Checks input command for any options
+## Presence of illegal options is ignored at this stage
+if [ $# -eq 0 ];
 then
 	echo "Missing options"
 	echo "Run $0 -h for help"
 	exit 0
-fi
+fi;
 
-checkPrefFileExists pref_file_status
-if [ $pref_file_status = "false" ]
+## Test Internet Connection
+## Accepts argument and writes status of internet connection on it
+## true - connected; false - not connected 
+testForInternetConnection() {
+	if nc -zw1 www.newsapi.org 443; 
+	then
+		eval "$1='true'"
+	else
+		
+		eval "$1='false'"
+	fi;
+}
+
+## Check for preferences 
+## Accepts an arguemnt and writes status of preferences file on it
+## true - file exists; false - file doesn't exist
+checkPrefFileExists() {
+	if [ -n "$(find . -name pref.md)" ];
+	then
+		eval "$1='true'"
+	else
+		eval "$1='false'"
+	fi;
+}
+	# echo "Preferences file not found"
+
+## Check Category Exists
+checkCategory() {
+	case "$1" in
+		"business"|"entertainment"|"gaming"|"general"|"music"|"politics"|"science-and-nature"|"sport"|"technology")
+			eval "$2='true'"
+			;;
+		*)
+			eval "$2='false'"
+			;;
+	esac
+}
+
+
+## Evaluate request
+
+
+testForInternetConnection conn
+if [ $conn = "false" ];
 then
-	createPrefFile
+	echo "You are not Connected to the Internet."
+	echo "You must be connected to the internet to use this service"
+	echo "Please check your internet connection and try again."
+	echo "If the problem still persists contact us"
 	exit 0
-else
-	apikey=$(head -n 1 pref.md)
-fi
+fi;
 
-while getopts "ahs" OPTION; do
+checkPrefFileExists pref
+
+apikey=63b506be33f74d6c9534c53eff5fe2fe
+
+while getopts "ahp" OPTION; do
 	case $OPTION in
 		a)
 			echo "Articles options selected"
-			echo "API key is: $apikey"
-			source="the-verge"
-			order="top"
-			while getopts "os" OPTION; do
+			while getopts "soc" OPTION; do
 				case $OPTION in
+					c) 
+						read -p "Enter the category: " category
+						;;
+
 					s)
 						read -p "Enter the source name: " source
 						;;
@@ -58,6 +86,7 @@ while getopts "ahs" OPTION; do
 							order="top"
 						fi
 						;;
+
 				esac
 			done
 			echo "Selected source is: $source"
@@ -72,17 +101,34 @@ while getopts "ahs" OPTION; do
 			echo "Options: -s = specify source; -o = specify sort-by order"
 			echo ""
 			echo "To view sources, run $0 -s"
+			echo ""
 			echo "To modify specific preferences, run $0 -p"
+			echo ""
 			echo "To review this help page, run $0 -h"
 			echo "Do not combine primary options!"
 			exit 0
 			;;
-		s)
-			echo "Source option selected"
-			exit 0
-			;;
 		p)
-			echo "Modify preferences option selected"
+			checkPrefFileExists pref
+			if [ $pref = "false" ];
+			then
+				echo "Preferences files created."
+				printf '{\n}' | cat > pref.md
+			fi;
+			staus="false"
+			while [ $status = "false" ];
+			do
+				echo "Categories: business, entertainment, gaming, general, music, politics, science-and-nature, sport, technology."
+				read -p "Enter the category you would like to modify: " category
+				checkCategory category status
+				if [ $status = "false" ]
+				then
+					echo "This is not a valid category"
+				fi;
+			done
+			curl -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/sources?category=$category"
+			read -p "Enter the preference for $category: " preference
+			echo "Preference entered"
 			exit 0
 			;;
 	esac
