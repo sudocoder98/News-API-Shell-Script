@@ -59,9 +59,7 @@ fi;
 
 viewSources() {
 	echo "For $1, the available sources in $language are: "
-	curl -sS -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/sources?category=$1&language=$language" | jq '.sources[].id' #> sources.json
-	#correctedSources=$(cat sources.json | jq '.[].id')
-	#echo "$correctedSources"
+	curl -sS -X GET -H "Content-Type: application/json" "https://newsapi.org/v1/sources?category=$1&language=$language" | jq '.sources[].id'
 }
 
 acceptValidCategory() {
@@ -86,7 +84,6 @@ modifyPreferences() {
 	temp=$(jq -s add pref.json temp.json)
 	echo $temp | cat > pref.json
 	echo "Preference for $category has been set to $source_id"
-	#jq --arg category $category --arg id $source_id | '.category=id' pref.json
 }
 
 viewArticle() {
